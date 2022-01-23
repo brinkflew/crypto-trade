@@ -50,7 +50,7 @@ LOG_SYMBOLS = {
     "CRITICAL": ("~", term.lightcoral_bold, 16746375),
 }
 
-LOG_ICONS_BASE_URL = "https://raw.githubusercontent.com/brinkflew/crypto-trade/.media/notifications"
+LOG_ICONS_BASE_URL = "https://github.com/brinkflew/crypto-trade/blob/master/.media/notifications/{level}.png?raw=true"
 
 
 atexit.register(lambda: print(STYLE_RESET))
@@ -237,7 +237,7 @@ class DiscordFormatter(ColorFormatter):
         record.embed = {
             "author": {
                 "name": record.levelname[0].upper() + record.levelname[1:].lower(),
-                "icon_url": f"{LOG_ICONS_BASE_URL}/{record.levelname.lower()}",
+                "icon_url": LOG_ICONS_BASE_URL.replace("{level}", record.levelname.lower()),
             },
             "description": message,
             "color": getattr(record, "log_color"),
