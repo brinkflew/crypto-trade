@@ -3,6 +3,14 @@ from trader.logger import term
 
 
 class Strategy(Trader):
+    """
+    Jump between the currently held coin and the most profitable coin
+    through the bridge currency, scouting multiple coins at a time.
+
+    Effectively the same as the `coin_switch` strategy but the bot
+    is less likely to get stuck.
+    """
+
     def scout(self):
         """
         Scout for potential jumps from the current coin to another coin

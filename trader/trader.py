@@ -2,6 +2,8 @@
 Automagic trader
 """
 
+import random
+
 from datetime import datetime
 
 from trader.logger import logger, discord_logger, term
@@ -17,6 +19,7 @@ class Trader:
 
     def initialize(self):
         self.initialize_trade_thresholds()
+        self.initialize_current_coin()
 
     def transaction_through_bridge(self, pair):
         """
@@ -244,3 +247,27 @@ class Trader:
                     f"{formatted_values}"
                     "\n```",
             })
+
+    def initialize_current_coin(self):
+        """
+        Decide what is the current coin, and set it up in the database
+        """
+        if self.database.get_current_coin() is None:
+            current_coin_symbol = self.config.CURRENT_COIN_SYMBOL
+
+            if not current_coin_symbol:
+                current_coin_symbol = random.choice(self.config.COINS_LIST)
+
+            self.logger.info(f"Setting initial coin to {term.yellow_bold(current_coin_symbol)}")
+
+            if current_coin_symbol not in self.config.COINS_LIST:
+                raise ValueError("Current coin symbol must be in coins list")
+
+            self.database.set_current_coin(current_coin_symbol)
+
+            # If we don't have a configuration, we selected a coin at random...
+            # Buy it so we can start trading.
+            if self.config.CURRENT_COIN_SYMBOL == "":
+                current_coin = self.database.get_current_coin()
+                self.logger.info(f"Purchasing {term.yellow_bold(current_coin_symbol)} to begin trading")
+                self.manager.buy_alt(current_coin, self.config.BRIDGE_COIN)
