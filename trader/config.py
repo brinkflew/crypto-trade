@@ -46,9 +46,13 @@ class Config:
             return os.environ.get(key.upper()) or config.get(TRADER_CONFIG_SECTION, key.lower())
 
         # Coins config
+        self.CURRENT_COIN_SYMBOL = get_option("CURRENT_COIN_SYMBOL")
         self.BRIDGE_COIN_SYMBOL = get_option("BRIDGE_COIN_SYMBOL")
         self.BRIDGE_COIN = Coin(self.BRIDGE_COIN_SYMBOL, False)
-        self.CURRENT_COIN_SYMBOL = get_option("CURRENT_COIN_SYMBOL")
+        self.BALANCE_COIN_SYMBOL = get_option("BALANCE_COIN_SYMBOL") or self.BRIDGE_COIN_SYMBOL
+        self.BALANCE_COIN = Coin(self.BALANCE_COIN_SYMBOL, False) \
+            if self.BALANCE_COIN_SYMBOL != self.BRIDGE_COIN_SYMBOL \
+            else self.BRIDGE_COIN
 
         coins_list = {coin for coin in re.split(r"[^A-Z]", get_option("COINS_LIST").upper()) if coin}
         coins_list.discard(self.BRIDGE_COIN_SYMBOL)

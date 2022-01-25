@@ -4,7 +4,7 @@ Automagic trader
 
 from datetime import datetime
 
-from trader.logger import logger, term
+from trader.logger import logger, discord_logger, term
 from trader.models import Coin, CoinValue, Pair
 
 
@@ -192,7 +192,7 @@ class Trader:
 
     def update_values(self):
         """
-        Log current value state of all altcoin balances against BTC and USDT in DB.
+        Log current value state of all altcoin balances against BTC and the bridge coin in DB.
         """
         now = datetime.now()
 
@@ -204,8 +204,43 @@ class Trader:
                 if balance == 0:
                     continue
 
-                usd_value = self.manager.get_ticker_price(coin + "USDT")
+                bridge_value = self.manager.get_ticker_price(coin + self.config.BRIDGE_COIN_SYMBOL)
                 btc_value = self.manager.get_ticker_price(coin + "BTC")
-                cv = CoinValue(coin, balance, usd_value, btc_value, datetime=now)
-                session.add(cv)
-                self.database.send_update(cv)
+                coin_value = CoinValue(coin, balance, bridge_value, btc_value, datetime=now)
+                session.add(coin_value)
+                self.database.send_update(coin_value)
+
+    def display_balance(self):
+        """
+        Log the current balance total value in the currently held coin, BTC and the bridge coin.
+        """
+        btc_symbol = "BTC"
+        current_symbol = self.database.get_current_coin().symbol
+
+        symbols = [
+            current_symbol,
+            btc_symbol,
+            self.config.BRIDGE_COIN.symbol,
+            self.config.BALANCE_COIN.symbol
+        ]
+
+        values = {symbol: self.manager.collate_coins(symbol) for symbol in symbols}
+        formatted_values = [
+            f"{'{:,.8f}'.format(value)} {term.yellow_bold(symbol)}"
+            for symbol, value in values.items()
+        ]
+        logger.info(f"Balance: {term.darkgray(' | ').join(formatted_values)}")
+
+        if logger.discord_enabled:
+            formatted_values = "\n".join([
+                f"{'{:>20,.8f}'.format(value)} {symbol}"
+                for symbol, value in values.items()
+            ])
+
+            discord_logger.info({
+                "description":
+                    "Current balance value"
+                    "\n```\n"
+                    f"{formatted_values}"
+                    "\n```",
+            })

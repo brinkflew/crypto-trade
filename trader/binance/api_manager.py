@@ -399,3 +399,34 @@ class BinanceManager:
 
         trade_log.set_complete(order.cumulative_quote_qty)
         return order
+
+    def collate_coins(self, target_symbol):
+        total = .0
+        enabled_symbols = {coin.symbol for coin in self.database.get_coins(only_enabled=True)}
+        enabled_symbols.add(self.config.BRIDGE_COIN_SYMBOL)
+
+        for balance in self.client.get_account().get("balances", {}):
+            balance_symbol = balance.get("asset")
+
+            if balance_symbol not in enabled_symbols:
+                continue
+
+            balance_value = float(balance.get("free"))
+
+            if balance_symbol == target_symbol:
+                total += balance_value
+                continue
+
+            price = self.get_ticker_price(target_symbol + balance_symbol)
+
+            if price is not None:
+                total += balance_value / price
+                continue
+
+            price = self.get_ticker_price(balance_symbol + target_symbol)
+
+            if price is not None:
+                total += balance_value * price
+                continue
+
+        return total

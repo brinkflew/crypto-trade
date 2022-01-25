@@ -48,11 +48,14 @@ def main():
     trader.initialize()
 
     logger.success(f"Started trader using strategy {term.bold(config.STRATEGY)}")
+    trader.display_balance()
+
     schedule = Scheduler()
     schedule.every(config.SCOUT_SLEEP_TIME).seconds.do(trader.scout).tag("scout")
     schedule.every(1).minutes.do(trader.update_values).tag("update value history")
     schedule.every(1).minutes.do(database.prune_scout_history).tag("prune scout history")
     schedule.every(1).hours.do(database.prune_value_history).tag("prune value history")
+    schedule.every(1).hours.at(':00').do(trader.display_balance).tag("display balance")
 
     try:
         while True:

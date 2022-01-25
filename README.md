@@ -55,7 +55,8 @@ Create a file named `trader.cfg` based off `trader.cfg.example`, then add your A
 - `binance_api_secret` - Binance secret key generated in the Binance account setup stage.
 - `binance_tld` - `com` or `us`, depending on your region. Default is `com`. Use `us` if the bot is hosted on the American continent.
 - `bridge_coin_symbol` - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair.
-- `current_coin_symbol` - This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty - the bot will select a random coin from your supported coin list and buy it.
+- `current_coin_symbol` - This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty, the bot will select a random coin from your supported coin list and buy it.
+- `balance_coin_symbol` - This coin will be used when printing out the status of your balance. It does not need to be in the coin list as it is used for display purposes only.
 - `coins_list` - The list of coins your are willing to trade, the bot will detect existing pairs by itself.
 - `scout_retention_time` - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
 - `use_margin` - `yes` to use scout_margin, `no` to use scout_multiplier.

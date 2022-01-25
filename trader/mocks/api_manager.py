@@ -142,7 +142,7 @@ class MockBinanceManager(BinanceManager):
         )
         return {"price": from_coin_price}
 
-    def collate_coins(self, target_symbol: str):
+    def collate_coins(self, target_symbol):
         total = 0
         for coin, balance in self.balances.items():
             if coin == target_symbol:
