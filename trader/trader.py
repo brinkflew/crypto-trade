@@ -158,7 +158,11 @@ class Trader:
         # If we have any viable options, pick the one with the biggest ratio
         if ratio_dict:
             best_pair = max(ratio_dict, key=ratio_dict.get)  # type: ignore
-            self.logger.info(f"Jumping from {term.yellow_bold(str(coin))} to {term.yellow_bold(best_pair.to_coin_id)}")
+            self.logger.info(
+                f"Jumping from {term.yellow_bold(str(coin))} to "
+                f"{term.yellow_bold(best_pair.to_coin_id)} through "
+                f"{term.yellow_bold(self.config.BRIDGE_COIN_SYMBOL)}",
+            )
             self.transaction_through_bridge(best_pair)
 
     def bridge_scout(self):

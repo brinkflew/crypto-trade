@@ -25,7 +25,9 @@ pretty = pprint.PrettyPrinter(indent=4).pformat
 # Colors: https://blessed.readthedocs.io/en/latest/colors.html#color-chart
 
 STYLE_RESET = term.normal
-ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+ANSI_BOLD_ESCAPE = re.compile(r"(?:\x1b\[1m)(.+?)(?=\x1b\(B\x1b\[m)")
 
 LOG_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../.logs/trader.log')
 LOG_FORMAT_RAW = "%(asctime)s [%(levelname)s] %(message)s"
@@ -72,6 +74,10 @@ class CustomLogger(logging.getLoggerClass()):
     Custom implementation of logger, adding a few methods to transform it
     into a usable tool for interacting with the user
     """
+
+    def __init__(self, *args, **kwargs):
+        self.discord_enabled = False
+        super().__init__(*args, **kwargs)
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func=None, extra=None, sinfo=None):
         rv = LogRecord(name, level, fn, lno, msg, args, exc_info, func, sinfo)
@@ -198,7 +204,7 @@ class ColorFormatter(StandardFormatter):
         if record.levelname == "CRITICAL" or (record.levelname == "ERROR" and record.__dict__.get("exc_info")):
             record.msg = str(record.msg)
             record.msg = record.msg[0].upper() + record.msg[1:]
-            record.msg = f"{term.lightcoral_bold}{str(record.msg)}{STYLE_RESET}"
+            record.msg = f"{term.lightcoral}{str(record.msg)}{STYLE_RESET}"
 
         return super().format(record)
 
@@ -213,8 +219,7 @@ class FileFormatter(ColorFormatter):
         super().__init__(fmt, *args, **kwargs)
 
     def format(self, record: LogRecord):
-        formatted = super().format(record)
-        return ANSI_ESCAPE.sub("", formatted).replace("(B", "")
+        return ANSI_ESCAPE.sub("", super().format(record)).replace("\x1B(B", "")
 
 
 class DiscordFormatter(ColorFormatter):
@@ -222,26 +227,36 @@ class DiscordFormatter(ColorFormatter):
     Custom log formatter for Discord notifications using embeds
     """
 
-    def format(self, record: LogRecord):
+    def format(self, record):
         if record.levelname in LOG_SYMBOLS:
             record.__dict__["log_color"] = LOG_SYMBOLS[record.levelname][2]
 
-        message = ANSI_ESCAPE.sub("", str(record.msg)).replace("(B", "")
-
-        if record.levelname == "CRITICAL" or (record.levelname == "ERROR" and record.__dict__.get("exc_info")):
-            message = message[0].upper() + message[1:]
-
-            if "\n" in message:
-                message = message.replace("\n", "\n```", 1) + "```"
-
         record.embed = {
+            "color": getattr(record, "log_color"),
             "author": {
                 "name": record.levelname[0].upper() + record.levelname[1:].lower(),
                 "icon_url": LOG_ICONS_BASE_URL.replace("{level}", record.levelname.lower()),
             },
-            "description": message,
-            "color": getattr(record, "log_color"),
         }
+
+        if isinstance(record.msg, dict):
+            record.embed.update(record.msg)
+        else:
+            message = str(record.msg)
+            message = ANSI_BOLD_ESCAPE.sub(r"{bold}\1{bold}".format(bold="**"), message)
+            message = ANSI_ESCAPE.sub("", message).replace("\x1B(B", "")
+
+            if record.levelname == "CRITICAL" or (record.levelname == "ERROR" and record.__dict__.get("exc_info")):
+                message = message[0].upper() + message[1:]
+
+                if record.__dict__.get("exc_text"):
+                    message += (
+                        "\n```\n"
+                        f"{record.__dict__.get('exc_text')}"
+                        "\n```"
+                    )
+
+            record.embed["description"] = message
 
         return record.embed
 
@@ -258,7 +273,7 @@ class DiscordHandler(logging.StreamHandler):
         return self.discord.post(embeds=[self.format(record)])
 
 
-def getLogger(name=None, trap=None) -> CustomLogger:
+def getLogger(name=None, trap=None, exclude_handlers=set()) -> CustomLogger:
     """
     Creates a supercharged logger instance
     """
@@ -279,24 +294,28 @@ def getLogger(name=None, trap=None) -> CustomLogger:
             for handler in logger.handlers:
                 logger.removeHandler(handler)
 
-            os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
-            file_handler = logging.FileHandler(os.path.realpath(LOG_FILE))
-            file_handler.setLevel(logging.DEBUG)
-            file_handler.setFormatter(FileFormatter())
-            logger.addHandler(file_handler)
+            if 'file' not in exclude_handlers:
+                os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+                file_handler = logging.FileHandler(os.path.realpath(LOG_FILE))
+                file_handler.setLevel(logging.DEBUG)
+                file_handler.setFormatter(FileFormatter())
+                logger.addHandler(file_handler)
 
-            log_handler = logging.StreamHandler(trap)
-            log_handler.setLevel(logging.INFO)
-            log_handler.setFormatter(ColorFormatter())
-            logger.addHandler(log_handler)
+            if 'console' not in exclude_handlers:
+                log_handler = logging.StreamHandler(trap)
+                log_handler.setLevel(logging.INFO)
+                log_handler.setFormatter(ColorFormatter())
+                logger.addHandler(log_handler)
 
-            discord_config = DiscordConfig()
+            if 'discord' not in exclude_handlers:
+                discord_config = DiscordConfig()
 
-            if discord_config.WEBHOOK_URL is not None:
-                discord_handler = DiscordHandler(webhook=discord_config.WEBHOOK_URL)
-                discord_handler.setLevel("SUCCESS")
-                discord_handler.setFormatter(DiscordFormatter())
-                logger.addHandler(discord_handler)
+                if discord_config.WEBHOOK_URL is not None:
+                    logger.discord_enabled = True  # type: ignore
+                    discord_handler = DiscordHandler(webhook=discord_config.WEBHOOK_URL)
+                    discord_handler.setLevel("SUCCESS")
+                    discord_handler.setFormatter(DiscordFormatter())
+                    logger.addHandler(discord_handler)
 
         setattr(logging.getLoggerClass(), 'over', CustomLogger.over)
 
@@ -318,8 +337,21 @@ def set_log_level(level, logger=None) -> None:
 _root_logger = getLogger()
 _mem_logger_trap = io.StringIO()
 _mem_logger = getLogger(name="virtual", trap=_mem_logger_trap)
-logger = getLogger("trader")
 
-set_log_level("WARNING", _root_logger)
-set_log_level("INFO", _mem_logger)
-set_log_level("INFO", logger)
+logger = getLogger(name="trader")
+"""
+Log to the console, a logfile and Discord (if enabled).
+"""
+
+discord_logger = getLogger(name="discord", exclude_handlers={'file', 'console'})
+"""
+Log to Discord only (if enabled).
+"""
+
+for handler in discord_logger.handlers:
+    handler.setLevel(logging.INFO)
+
+set_log_level(logging.WARNING, _root_logger)
+set_log_level(logging.INFO, _mem_logger)
+set_log_level(logging.DEBUG, logger)
+set_log_level(logging.INFO, discord_logger)

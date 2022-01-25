@@ -9,7 +9,7 @@ from signal import signal, SIGINT, SIGTERM
 from binance.exceptions import BinanceAPIException
 
 from trader import Config, Database, Scheduler
-from trader.logger import logger
+from trader.logger import logger, term
 from trader.binance import BinanceManager
 from trader.strategies import get_strategy
 
@@ -21,7 +21,7 @@ def signal_handler(signum, frame):
 
 
 def main():
-    logger.info("Starting trader")
+    logger.debug("Starting trader")
 
     config = Config()
     database = Database(config)
@@ -36,7 +36,7 @@ def main():
 
     database.create_database()
     database.set_coins(config.COINS_LIST)
-    logger.info("Initialized database")
+    logger.debug("Initialized database")
 
     strategy = get_strategy(config.STRATEGY)
 
@@ -44,10 +44,10 @@ def main():
         logger.error(f"Invalid strategy '{config.STRATEGY}'")
         return
 
-    logger.info(f"Using strategy '{config.STRATEGY}'")
     trader = strategy(manager, database, config)
     trader.initialize()
 
+    logger.success(f"Started trader using strategy {term.bold(config.STRATEGY)}")
     schedule = Scheduler()
     schedule.every(config.SCOUT_SLEEP_TIME).seconds.do(trader.scout).tag("scout")
     schedule.every(1).minutes.do(trader.update_values).tag("update value history")

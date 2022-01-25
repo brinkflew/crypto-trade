@@ -102,7 +102,7 @@ class BinanceManager:
             price = self.cache.ticker_values.get(ticker_symbol, None)
 
             if price is None:
-                logger.warning(f"Ticker {term.yellow_bold(ticker_symbol)} not found, skipping")
+                logger.info(f"Ticker {term.yellow_bold(ticker_symbol)} not found, skipping")
                 self.cache.non_existent_tickers.add(ticker_symbol)
 
         return price
@@ -136,7 +136,7 @@ class BinanceManager:
             try:
                 return func(*args, **kwargs)
             except Exception:
-                logger.warning(f"Failed to place order, retrying [{attempts}/20]")
+                logger.debug(f"Failed to place order, retrying [{attempts}/20]")
 
                 if attempts == 0:
                     logger.warning(traceback.format_exc())
@@ -189,7 +189,7 @@ class BinanceManager:
                             symbol=origin_symbol + target_symbol,
                             orderId=order_id,
                         )
-                    logger.warning(f"Order <{order_id}> timed out, cancelled")
+                    logger.debug(f"Order <{order_id}> timed out, cancelled")
 
                     # Sell partially
                     if order_status.status == "PARTIALLY_FILLED" and order_status.side == "BUY":
@@ -208,7 +208,7 @@ class BinanceManager:
                     return None
 
                 if order_status.status == "CANCELED":
-                    logger.warning(f"Order <{order_id}> canceled")
+                    logger.debug(f"Order <{order_id}> canceled")
                     logger.over("Scouting...")
                     return None
 
@@ -318,10 +318,9 @@ class BinanceManager:
             return None
 
         logger.success(
-            f"Executed {term.darkolivegreen3_bold('BUY')} order for "
+            f"{term.darkolivegreen3_bold('BUY')} "
             f"{'{:.8f}'.format(order_quantity)} "
-            f"{term.yellow_bold(origin_symbol)} "
-            f"{term.darkgray('at')} "
+            f"{term.yellow_bold(origin_symbol)} at "
             f"{'{:.8f}'.format(order_quantity * from_coin_price)} "
             f"{term.yellow_bold(target_symbol)} "
         )
@@ -361,8 +360,7 @@ class BinanceManager:
         logger.debug(
             f"Placing {term.lightcoral_bold('SELL')} order for "
             f"{'{:.8f}'.format(order_quantity)} "
-            f"{term.yellow_bold(origin_symbol)} "
-            f"{term.darkgray('at')} "
+            f"{term.yellow_bold(origin_symbol)} at "
             f"{'{:.8f}'.format(order_quantity * from_coin_price)} "
             f"{term.yellow_bold(target_symbol)} "
         )
@@ -392,10 +390,9 @@ class BinanceManager:
             new_balance = self.get_currency_balance(origin_symbol, True)
 
         logger.success(
-            f"Executed {term.lightcoral_bold('SELL')} order for "
+            f"{term.lightcoral_bold('SELL')} "
             f"{'{:.8f}'.format(order_quantity)} "
-            f"{term.yellow_bold(origin_symbol)} "
-            f"{term.darkgray('at')} "
+            f"{term.yellow_bold(origin_symbol)} at "
             f"{'{:.8f}'.format(order_quantity * from_coin_price)} "
             f"{term.yellow_bold(target_symbol)} "
         )
