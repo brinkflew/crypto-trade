@@ -1,5 +1,5 @@
 """
-History of coins hold
+History of coin holdings
 """
 
 from datetime import datetime
@@ -11,7 +11,7 @@ from trader.models import Base, Coin
 
 
 class CoinHistory(Base):
-    __tablename__ = "history"
+    __tablename__ = "coin_history"
 
     id = Column(Integer, primary_key=True)
 

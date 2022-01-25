@@ -44,11 +44,12 @@ def main():
         logger.error(f"Invalid strategy '{config.STRATEGY}'")
         return
 
+    logger.success(f"Starting trader using strategy {term.bold(config.STRATEGY)}")
     trader = strategy(manager, database, config)
     trader.initialize()
 
-    logger.success(f"Started trader using strategy {term.bold(config.STRATEGY)}")
-    trader.display_balance()
+    if time.localtime().tm_min < 45:  # Avoid spamming the current balance
+        trader.display_balance()
 
     schedule = Scheduler()
     schedule.every(config.SCOUT_SLEEP_TIME).seconds.do(trader.scout).tag("scout")

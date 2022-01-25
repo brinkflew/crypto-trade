@@ -2,9 +2,10 @@
 Automagic trader
 """
 
+import re
 import random
 
-from datetime import datetime
+from datetime import datetime as _datetime
 
 from trader.logger import logger, discord_logger, term
 from trader.models import Coin, CoinValue, Pair
@@ -20,6 +21,7 @@ class Trader:
     def initialize(self):
         self.initialize_trade_thresholds()
         self.initialize_current_coin()
+        self.initialize_starting_balances()
 
     def transaction_through_bridge(self, pair):
         """
@@ -197,7 +199,7 @@ class Trader:
         """
         Log current value state of all altcoin balances against BTC and the bridge coin in DB.
         """
-        now = datetime.now()
+        now = _datetime.now()
 
         with self.database.db_session() as session:
             coins = session.query(Coin).all()
@@ -213,36 +215,73 @@ class Trader:
                 session.add(coin_value)
                 self.database.send_update(coin_value)
 
+    def initialize_starting_balances(self):
+        symbols = {
+            "BTC",
+            *{coin.symbol for coin in self.database.get_coins(only_enabled=True)},
+            self.config.BRIDGE_COIN.symbol,
+            self.config.BALANCE_COIN.symbol,
+        }
+
+        values = {symbol: self.manager.collate_coins(symbol) for symbol in symbols}
+
+        with self.manager.cache.starting_balances() as starting_balances:
+            starting_balances.update({symbol: value for symbol, value in values.items()})
+
     def display_balance(self):
         """
         Log the current balance total value in the currently held coin, BTC and the bridge coin.
         """
-        btc_symbol = "BTC"
-        current_symbol = self.database.get_current_coin().symbol
 
-        symbols = [
-            current_symbol,
-            btc_symbol,
-            self.config.BRIDGE_COIN.symbol,
-            self.config.BALANCE_COIN.symbol
-        ]
+        # Clear the cached balances once and only once
+        with self.manager.cache.open_balances() as open_balances:
+            open_balances.clear()
 
-        values = {symbol: self.manager.collate_coins(symbol) for symbol in symbols}
+        with self.manager.cache.starting_balances() as starting_balances:
+            values = {}
+
+            for symbol, starting_balance in starting_balances.items():
+                collated_balance = self.manager.collate_coins(symbol)
+                change = '{:+,.2f}%'.format((collated_balance - starting_balance) / collated_balance * 100)
+
+                if re.match(r"^[+-]0\.00%$", change):
+                    change = change.replace('-', '+')
+                    change_color = term.darkgray(change)
+                elif change.startswith('+'):
+                    change_color = term.darkolivegreen3(change)
+                else:
+                    change_color = term.lightcoral(change)
+
+                values[symbol] = {
+                    "balance": '{:,.8f}'.format(collated_balance),
+                    "change": change,
+                    "change_color": change_color,
+                }
+
+        values = {symbol: values[symbol] for symbol in sorted(values)}
+        balance_align_size = max(len(value["balance"]) for value in values.values())
+        symbol_align_size = max(len(symbol) for symbol in values.keys())
         formatted_values = [
-            f"{'{:,.8f}'.format(value)} {term.yellow_bold(symbol)}"
+            f"{'{:>{align}}'.format(value['balance'], align=balance_align_size + 4)} "
+            f"{term.yellow_bold('{:<{align}}'.format(symbol, align=symbol_align_size))} "
+            f"{term.darkgray('(')}"
+            f"{value['change_color']}"
+            f"{term.darkgray(')')}"
             for symbol, value in values.items()
         ]
-        logger.info(f"Balance: {term.darkgray(' | ').join(formatted_values)}")
+        logger.info("Current collated balance value:\n" + "\n".join(formatted_values))
 
         if logger.discord_enabled:
             formatted_values = "\n".join([
-                f"{'{:>20,.8f}'.format(value)} {symbol}"
+                f"{'{:>{align}}'.format(value['balance'], align=balance_align_size)} "
+                f"{'{:<{align}}'.format(symbol, align=symbol_align_size)} "
+                f"({value['change']})"
                 for symbol, value in values.items()
             ])
 
             discord_logger.info({
                 "description":
-                    "Current balance value"
+                    "Current collated balance value:"
                     "\n```\n"
                     f"{formatted_values}"
                     "\n```",

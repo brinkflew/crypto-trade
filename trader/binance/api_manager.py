@@ -102,7 +102,7 @@ class BinanceManager:
             price = self.cache.ticker_values.get(ticker_symbol, None)
 
             if price is None:
-                logger.info(f"Ticker {term.yellow_bold(ticker_symbol)} not found, skipping")
+                logger.debug(f"Ticker {term.yellow_bold(ticker_symbol)} not found, skipping")
                 self.cache.non_existent_tickers.add(ticker_symbol)
 
         return price
@@ -405,28 +405,23 @@ class BinanceManager:
         enabled_symbols = {coin.symbol for coin in self.database.get_coins(only_enabled=True)}
         enabled_symbols.add(self.config.BRIDGE_COIN_SYMBOL)
 
-        for balance in self.client.get_account().get("balances", {}):
-            balance_symbol = balance.get("asset")
+        for symbol in enabled_symbols:
+            balance = self.get_currency_balance(symbol)
 
-            if balance_symbol not in enabled_symbols:
+            if symbol == target_symbol:
+                total += balance
                 continue
 
-            balance_value = float(balance.get("free"))
-
-            if balance_symbol == target_symbol:
-                total += balance_value
-                continue
-
-            price = self.get_ticker_price(target_symbol + balance_symbol)
+            price = self.get_ticker_price(target_symbol + symbol)
 
             if price is not None:
-                total += balance_value / price
+                total += balance / price
                 continue
 
-            price = self.get_ticker_price(balance_symbol + target_symbol)
+            price = self.get_ticker_price(symbol + target_symbol)
 
             if price is not None:
-                total += balance_value * price
+                total += balance * price
                 continue
 
         return total
