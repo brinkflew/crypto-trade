@@ -258,6 +258,16 @@ class Trader:
                     "change_color": change_color,
                 }
 
+        current_coin_balance = '{:,.8f}'.format(
+            self.manager.get_currency_balance(self.config.CURRENT_COIN_SYMBOL)
+        )
+
+        logger.info(
+            f"Holding "
+            f"{current_coin_balance} "
+            f"{term.yellow_bold(self.config.CURRENT_COIN_SYMBOL)}"
+        )
+
         values = {symbol: values[symbol] for symbol in sorted(values)}
         balance_align_size = max(len(value["balance"]) for value in values.values())
         symbol_align_size = max(len(symbol) for symbol in values.keys())
@@ -269,7 +279,8 @@ class Trader:
             f"{term.darkgray(')')}"
             for symbol, value in values.items()
         ]
-        logger.info("Current collated balance value:\n" + "\n".join(formatted_values))
+
+        logger.info("Collated balance:\n" + "\n".join(formatted_values))
 
         if logger.discord_enabled:
             formatted_values = "\n".join([
@@ -281,7 +292,11 @@ class Trader:
 
             discord_logger.info({
                 "description":
-                    "Current collated balance value:"
+                    "Holding:"
+                    "\n```\n"
+                    f"{current_coin_balance} {self.config.CURRENT_COIN_SYMBOL}"
+                    "\n\n```"
+                    "Collated balance:"
                     "\n```\n"
                     f"{formatted_values}"
                     "\n```",
