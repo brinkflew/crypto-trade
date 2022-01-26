@@ -33,7 +33,7 @@ class Strategy(Trader):
                 continue
 
             coin_possessed = True
-            self.logger.over(f"Scouting pair {term.yellow_bold(pair_symbol)}...")
+            self.logger.over(f"Scouting coin {term.yellow_bold(coin.symbol)}...")
             self._jump_to_best_coin(coin, coin_price)
 
         if not coin_possessed:
