@@ -54,6 +54,7 @@ Create a file named `trader.cfg` based off `trader.cfg.example`, then add your A
 - `binance_api_key` - Binance API key generated in the Binance account setup stage.
 - `binance_api_secret` - Binance secret key generated in the Binance account setup stage.
 - `binance_tld` - `com` or `us`, depending on your region. Default is `com`. Use `us` if the bot is hosted on the American continent.
+- `binance_retries` - Number of reconnection attempts in case of connection error with the Binance API server. Leave empty or set to `0` for unlimited retries.
 - `bridge_coin_symbol` - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair.
 - `current_coin_symbol` - This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty, the bot will select a random coin from your supported coin list and buy it.
 - `balance_coin_symbol` - This coin will be used when printing out the status of your balance. It does not need to be in the coin list as it is used for display purposes only.
@@ -75,6 +76,7 @@ All of the options provided in `trader.cfg` can also be configured using environ
 BINANCE_API_KEY=""
 BINANCE_API_SECRET=""
 BINANCE_TLD="com"
+BINANCE_RETRIES=5
 BRIDGE_COIN_SYMBOL="USDT"
 CURRENT_COIN_SYMBOL="DOT"
 COINS_LIST="BTC ETH BCH BNB ADA XRP ATOM LUNA DOT SOL USDT"

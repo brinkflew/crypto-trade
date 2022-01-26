@@ -42,6 +42,18 @@ class BinanceManager:
             self.client,
         )
 
+    def reconnect(self):
+        if isinstance(self.stream_manager, BinanceStreamManager):
+            self.stream_manager.close()
+
+        self.client = BinanceClient(
+            self.config.BINANCE_API_KEY,
+            self.config.BINANCE_API_SECRET,
+            tld=self.config.BINANCE_TLD,
+        )
+
+        self.setup_websockets()
+
     # @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self):
         return {ticker["symbol"]: float(ticker["takerCommission"]) for ticker in self.client.get_trade_fee()}

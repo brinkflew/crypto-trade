@@ -27,6 +27,7 @@ class Config:
             "scout_sleep_time": 5,
             "strategy": "default",
             "binance_tld": "com",
+            "binance_retries": 0,
             "sell_timeout": 0,
             "buy_timeout": 0,
             "scout_margin": 0.8,
@@ -75,6 +76,8 @@ class Config:
         self.BINANCE_API_KEY = get_option("BINANCE_API_KEY")
         self.BINANCE_API_SECRET = get_option("BINANCE_API_SECRET")
         self.BINANCE_TLD = get_option("BINANCE_TLD")
+        self.BINANCE_RETRIES = int(get_option("BINANCE_RETRIES"))
+        self.BINANCE_RETRIES_UNLIMITED = not self.BINANCE_RETRIES
 
         # Selected strategy
         self.STRATEGY = get_option("STRATEGY")

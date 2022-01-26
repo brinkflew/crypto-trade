@@ -5,7 +5,9 @@ Let's go tradin'
 import os
 import time
 
-from signal import signal, SIGINT, SIGTERM
+from signal import SIGINT, SIGTERM
+from urllib3.exceptions import ReadTimeoutError
+from requests.exceptions import ReadTimeout
 from binance.exceptions import BinanceAPIException
 
 from trader import Config, Database, Scheduler
@@ -14,10 +16,8 @@ from trader.binance import BinanceManager
 from trader.strategies import get_strategy
 
 
-def signal_handler(signum, frame):
-    print("", end="\r")  # Clear the last line of extraneous characters (i.e. ^C)
-    logger.warning(f"Received interrupt signal ({signum}), exiting...")
-    os.kill(os.getpid(), SIGTERM)
+class ControlledException(Exception):
+    pass
 
 
 def main():
@@ -57,21 +57,46 @@ def main():
     schedule.every(1).minutes.do(database.prune_scout_history).tag("prune scout history")
     schedule.every(1).hours.do(database.prune_value_history).tag("prune value history")
     schedule.every(1).hours.at(':00').do(trader.display_balance).tag("display balance")
+    schedule.every(1).hours.do(manager.reconnect).tag("reconnect manager")
 
     try:
+        reconnection_attempts = 0
+
         while True:
-            schedule.run_pending()
-            time.sleep(1)
+            try:
+                schedule.run_pending()
+                time.sleep(1)
+
+            except (ReadTimeoutError, ReadTimeout):
+                logger.warning(f"Connection to API manager timed out")
+
+                if config.BINANCE_RETRIES_UNLIMITED or reconnection_attempts < config.BINANCE_RETRIES:
+                    reconnection_attempts += 1
+                    logger.info(f"Reconnecting [{reconnection_attempts}/{config.BINANCE_RETRIES}]")
+                    manager.reconnect()
+                else:
+                    raise ControlledException(
+                        f"Maximum reconnection attempts reached "
+                        f"[{reconnection_attempts}/{config.BINANCE_RETRIES}]"
+                    )
     finally:
         if manager.stream_manager:
             manager.stream_manager.close()
 
 
 if __name__ == "__main__":
-    signal(SIGINT, signal_handler)
-
     try:
         main()
+
+    except KeyboardInterrupt:
+        print("", end="\r")  # Clear the last line of extraneous characters (i.e. ^C)
+        logger.warning(f"Received interrupt signal ({SIGINT}), exiting...")
+
+    except ControlledException as e:
+        logger.error(e)
+
     except Exception as e:
         logger.critical(e, exc_info=True)
+
+    finally:
         os.kill(os.getpid(), SIGTERM)

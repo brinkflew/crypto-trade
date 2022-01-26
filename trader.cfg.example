@@ -9,6 +9,9 @@ binance_api_secret=
 # `com` or `us`, depending on your region
 binance_tld=com
 
+# Number of reconnection attempts when unexpectedly disconnected from the Binance API
+binance_retries=5
+
 # Bridge coin of your choice
 bridge_coin_symbol=USDT
 
