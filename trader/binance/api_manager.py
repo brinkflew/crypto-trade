@@ -54,6 +54,16 @@ class BinanceManager:
 
         self.setup_websockets()
 
+    def test_connection(self):
+        """
+        Check if we can access API features that require a valid config
+        """
+        try:
+            self.client.ping()
+            self.get_account()
+        except BinanceAPIException:
+            raise Exception("Couldn't access Binance API - API keys may be wrong or lack sufficient permissions")
+
     # @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self):
         return {ticker["symbol"]: float(ticker["takerCommission"]) for ticker in self.client.get_trade_fee()}

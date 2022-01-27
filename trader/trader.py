@@ -235,9 +235,13 @@ class Trader:
             open_balances.clear()
 
         with self.manager.cache.starting_balances() as starting_balances:
+            filtered_coins = {"BTC", self.config.BRIDGE_COIN_SYMBOL, self.config.BALANCE_COIN_SYMBOL}
             values = {}
 
             for symbol, starting_balance in starting_balances.items():
+                if symbol not in filtered_coins:
+                    continue
+
                 collated_balance = self.manager.collate_coins(symbol)
                 change = '{:+,.2f}%'.format((collated_balance - starting_balance) / collated_balance * 100)
 
@@ -291,8 +295,9 @@ class Trader:
                 "description":
                     "Holding:"
                     "\n```\n"
-                    f"{current_coin_balance} {self.config.CURRENT_COIN_SYMBOL}"
-                    "\n\n```"
+                    f"{'{:>{align}}'.format(current_coin_balance, align=balance_align_size)} "
+                    f"{self.config.CURRENT_COIN_SYMBOL}"
+                    "\n```\n"
                     "Collated balance:"
                     "\n```\n"
                     f"{formatted_values}"

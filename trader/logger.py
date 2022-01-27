@@ -206,7 +206,7 @@ class ColorFormatter(StandardFormatter):
             record.msg = record.msg[0].upper() + record.msg[1:]
             record.msg = f"{term.lightcoral}{str(record.msg)}{STYLE_RESET}"
 
-        return super().format(record)
+        return "\x1B[2K" + super().format(record)
 
 
 class FileFormatter(ColorFormatter):
