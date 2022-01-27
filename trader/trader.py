@@ -97,7 +97,7 @@ class Trader:
                 from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE_COIN)
                 if from_coin_price is None:
                     logger.warning(
-                        f"{term.yellow_wold(pair.from_coin)} symbol not found, "
+                        f"{term.yellow_wold(pair.from_coin.symbol)} symbol not found, "
                         f"skipping initialization"
                     )
                     continue
@@ -105,7 +105,7 @@ class Trader:
                 to_coin_price = self.manager.get_ticker_price(pair.to_coin + self.config.BRIDGE_COIN)
                 if to_coin_price is None:
                     logger.warning(
-                        f"{term.yellow_wold(pair.to_coin)} symbol not found, "
+                        f"{term.yellow_wold(pair.to_coin.symbol)} symbol not found, "
                         f"skipping initialization"
                     )
                     continue
