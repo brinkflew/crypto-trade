@@ -259,15 +259,9 @@ class Trader:
                     "change_color": change_color,
                 }
 
-        current_coin_balance = '{:,.8f}'.format(
-            self.manager.get_currency_balance(self.config.CURRENT_COIN_SYMBOL)
-        )
-
-        logger.info(
-            f"Holding "
-            f"{current_coin_balance} "
-            f"{term.yellow_bold(self.config.CURRENT_COIN_SYMBOL)}"
-        )
+        current_coin = self.database.get_current_coin()
+        current_coin_balance = '{:,.8f}'.format(self.manager.get_currency_balance(current_coin.symbol))
+        logger.info(f"Holding {current_coin_balance} {term.yellow_bold(current_coin.symbol)}")
 
         values = {symbol: values[symbol] for symbol in sorted(values)}
         balance_align_size = max(len(value["balance"]) for value in values.values())
@@ -296,7 +290,7 @@ class Trader:
                     "Holding:"
                     "\n```\n"
                     f"{'{:>{align}}'.format(current_coin_balance, align=balance_align_size)} "
-                    f"{self.config.CURRENT_COIN_SYMBOL}"
+                    f"{current_coin.symbol}"
                     "\n```\n"
                     "Collated balance:"
                     "\n```\n"
