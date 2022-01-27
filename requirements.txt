@@ -8,4 +8,4 @@ gevent_socketio==0.3.6
 schedule==1.1.0
 SQLAlchemy==1.4.15
 sqlitedict==1.7.0
-unicorn_binance_websocket_api==1.35.0
+unicorn-binance-websocket-api==1.36.0
