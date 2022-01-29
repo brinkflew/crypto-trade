@@ -57,7 +57,8 @@ def main():
     schedule.every(1).minutes.do(trader.update_values).tag("update value history")
     schedule.every(1).minutes.do(database.prune_scout_history).tag("prune scout history")
     schedule.every(1).hours.do(database.prune_value_history).tag("prune value history")
-    schedule.every(1).hours.at(':00').do(trader.display_balance).tag("display balance")
+    schedule.every(1).days.at('07:00:00').do(trader.display_balance).tag("display balance")
+    schedule.every(1).days.at('19:00:00').do(trader.display_balance).tag("display balance")
 
     try:
         reconnection_attempts = 0
@@ -69,13 +70,14 @@ def main():
 
             except (ReadTimeoutError, ReadTimeout):
                 logger.warning(f"Connection to API manager timed out")
+
+                reconnection_attempts += 1
                 attempts_format = (
                     f"[{reconnection_attempts}/"
-                    f"{'∞' if config.BINANCE_RETRIES_UNLIMITED else config.BINANCE_RETRIES}]"
+                    f"{'unlimited' if config.BINANCE_RETRIES_UNLIMITED else config.BINANCE_RETRIES}]"
                 )
 
                 if config.BINANCE_RETRIES_UNLIMITED or reconnection_attempts < config.BINANCE_RETRIES:
-                    reconnection_attempts += 1
                     logger.over(f"Reconnecting to Binance API manager {attempts_format}")
                     manager.reconnect()
                     manager.test_connection()

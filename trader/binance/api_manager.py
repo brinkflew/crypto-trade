@@ -339,7 +339,7 @@ class BinanceManager:
         if order is None:
             return None
 
-        logger.success(
+        logger.info(
             f"{term.darkolivegreen3_bold('BUY')} "
             f"{'{:.8f}'.format(order_quantity)} "
             f"{term.yellow_bold(origin_symbol)} at "
@@ -411,7 +411,7 @@ class BinanceManager:
         while new_balance >= origin_balance:
             new_balance = self.get_currency_balance(origin_symbol, True)
 
-        logger.success(
+        logger.info(
             f"{term.lightcoral_bold('SELL')} "
             f"{'{:.8f}'.format(order_quantity)} "
             f"{term.yellow_bold(origin_symbol)} at "

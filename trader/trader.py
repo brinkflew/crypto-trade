@@ -52,6 +52,10 @@ class Trader:
         if result is not None:
             self.database.set_current_coin(pair.to_coin)
             self.update_trade_threshold(pair.to_coin, result.price)
+            logger.success(
+                f"Jumped from {term.yellow_bold(pair.from_coin.symbol)} "
+                f"to {term.yellow_bold(pair.to_coin.symbol)}"
+            )
             return result
 
         logger.warning(f"Failed to place {term.darkolivegreen3_bold('BUY')} order for {term.yellow_bold(str(pair))}")
@@ -263,7 +267,7 @@ class Trader:
         current_coin_balance = '{:,.8f}'.format(self.manager.get_currency_balance(current_coin.symbol))
         logger.info(f"Holding {current_coin_balance} {term.yellow_bold(current_coin.symbol)}")
 
-        values = {symbol: values[symbol] for symbol in sorted(values)}
+        values = {symbol: values[symbol] for symbol in values}
         balance_align_size = max(len(value["balance"]) for value in values.values())
         symbol_align_size = max(len(symbol) for symbol in values.keys())
         formatted_values = [
