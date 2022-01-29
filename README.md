@@ -93,17 +93,17 @@ DISCORD_WEBHOOK_URL=""
 
 ### Paying Fees with BNB
 You can [use BNB to pay for any fees on the Binance platform](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees), which will reduce all fees by 25%. In order to support this benefit, the bot will always perform the following operations:
--   Automatically detect that you have BNB fee payment enabled.
--   Make sure that you have enough BNB in your account to pay the fee of the inspected trade.
--   Take into consideration the discount when calculating the trade threshold.
+- Automatically detect that you have BNB fee payment enabled.
+- Make sure that you have enough BNB in your account to pay the fee of the inspected trade.
+- Take into consideration the discount when calculating the trade threshold.
 
 ### Notifications
 
-THe bot can send alert and trade notifications to Discord through webhooks.
+The bot can send alert and trade notifications to Discord through webhooks.
 
 To setup the notifications, you first need to create a webhook in your Discord server by choosing a text channel and editing it.
 
-Go to `Integrations` the `Webhooks` and create a new webhook. Click the `Copy Webhook URL` and paste that content into your `trader.cfg` file next to the `discord_webhook_url` key, or in the `DISCORD_WEBHOOK_URL` environment variable.
+Go to `Integrations` then `Webhooks` and create a new webhook. Click the `Copy Webhook URL` and paste that content into your `trader.cfg` file next to the `discord_webhook_url` key, or in the `DISCORD_WEBHOOK_URL` environment variable.
 
 ### Run
 
