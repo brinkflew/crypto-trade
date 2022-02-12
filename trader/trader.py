@@ -52,9 +52,13 @@ class Trader:
         if result is not None:
             self.database.set_current_coin(pair.to_coin)
             self.update_trade_threshold(pair.to_coin, result.price)
+
+            def format_balance(balance, symbol):
+                return f"{'{:.8f}'.format(balance)} {term.yellow_bold(symbol)}"
+
             logger.success(
-                f"Jumped from {term.yellow_bold(pair.from_coin.symbol)} "
-                f"to {term.yellow_bold(pair.to_coin.symbol)}"
+                f"Jumped from {format_balance(balance, pair.from_coin.symbol)} "
+                f"to {format_balance(self.manager.get_currency_balance(pair.to_coin.symbol), pair.to_coin.symbol)}"
             )
             return result
 
@@ -239,7 +243,7 @@ class Trader:
             open_balances.clear()
 
         with self.manager.cache.starting_balances() as starting_balances:
-            filtered_coins = {"BTC", self.config.BRIDGE_COIN_SYMBOL, self.config.BALANCE_COIN_SYMBOL}
+            filtered_coins = ["BTC", self.config.BRIDGE_COIN_SYMBOL, self.config.BALANCE_COIN_SYMBOL]
             values = {}
 
             for symbol, starting_balance in starting_balances.items():
